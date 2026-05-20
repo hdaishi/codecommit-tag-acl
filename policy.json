@@ -1,0 +1,200 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ForceRepositoryOwnerTagOnCreate",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:CreateRepository",
+                "codecommit:TagResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestTag/RepositoryOwner": "${aws:username}"
+                },
+                "ForAllValues:StringEquals": {
+                    "aws:TagKeys": [
+                        "RepositoryOwner"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "AllowAllActionsOnRepository",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:*"
+            ],
+            "Resource": "arn:aws:codecommit:*:*:*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:ResourceTag/RepositoryOwner": "${aws:username}"
+                }
+            }
+        },
+        {
+            "Sid": "AllowRepositoryWriteActionsOnRepository",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:List*",
+                "codecommit:Get*",
+                "codecommit:BatchGet*",
+                "codecommit:Describe*",
+                "codecommit:GitPull",
+                "codecommit:GitPush",
+                "codecommit:CreateBranch",
+                "codecommit:DeleteBranch",
+                "codecommit:MergeBranchesByFastForward",
+                "codecommit:MergeBranchesBySquash",
+                "codecommit:MergeBranchesByThreeWay",
+                "codecommit:MergePullRequestByFastForward",
+                "codecommit:MergePullRequestBySquash",
+                "codecommit:MergePullRequestByThreeWay",
+                "codecommit:BatchDescribeMergeConflicts",
+                "codecommit:CreateUnreferencedMergeCommit",
+                "codecommit:CreatePullRequest",
+                "codecommit:CreatePullRequestApprovalRule",
+                "codecommit:DeletePullRequestApprovalRule",
+                "codecommit:EvaluatePullRequestApprovalRules",
+                "codecommit:OverridePullRequestApprovalRules",
+                "codecommit:PostCommentForPullRequest",
+                "codecommit:UpdatePullRequestApprovalRuleContent",
+                "codecommit:UpdatePullRequestApprovalState",
+                "codecommit:UpdatePullRequestDescription",
+                "codecommit:UpdatePullRequestStatus",
+                "codecommit:UpdatePullRequestTitle",
+                "codecommit:DeleteFile",
+                "codecommit:PutFile",
+                "codecommit:CreateCommit"
+                
+            ],
+            "Resource": "arn:aws:codecommit:*:*:*",
+            "Condition": {
+                "StringLike": {
+                    "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*"
+                }
+            }
+        },
+        {
+            "Sid": "DenyDirectPushAndMergeIntoProtectedBranches",
+            "Effect": "Deny",
+            "Action": [
+                "codecommit:GitPush",
+                "codecommit:CreateBranch",
+                "codecommit:DeleteBranch",
+                "codecommit:MergeBranchesByFastForward",
+                "codecommit:MergeBranchesBySquash",
+                "codecommit:MergeBranchesByThreeWay",
+                "codecommit:MergePullRequestByFastForward",
+                "codecommit:MergePullRequestBySquash",
+                "codecommit:MergePullRequestByThreeWay",
+                "codecommit:BatchDescribeMergeConflicts",
+                "codecommit:CreateUnreferencedMergeCommit",
+                "codecommit:DeletePullRequestApprovalRule",
+                "codecommit:EvaluatePullRequestApprovalRules",
+                "codecommit:OverridePullRequestApprovalRules",
+                "codecommit:PostCommentForPullRequest",
+                "codecommit:UpdatePullRequestApprovalRuleContent",
+                "codecommit:UpdatePullRequestApprovalState",
+                "codecommit:UpdatePullRequestDescription",
+                "codecommit:UpdatePullRequestStatus",
+                "codecommit:UpdatePullRequestTitle",
+                "codecommit:DeleteFile",
+                "codecommit:PutFile",
+                "codecommit:CreateCommit"
+            ],
+            "Resource": "arn:aws:codecommit:*:*:*",
+            "Condition": {
+                "StringLikeIfExists": {
+                    "codecommit:References": [
+                        "refs/heads/main",
+                        "refs/heads/develop"
+                    ]
+                },
+                "StringLike": {
+                    "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*"
+                },
+                "Null": {
+                    "codecommit:References": "false"
+                }
+            }
+        },
+        {
+            "Sid": "AllowRepositoryReadOnRepository",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:GitPull",
+                "codecommit:Get*",
+                "codecommit:Describe*",
+                "codecommit:BatchGet*",
+                "codecommit:List*"
+            ],
+            "Resource": "arn:aws:codecommit:*:*:*",
+            "Condition": {
+                "StringLike": {
+                    "aws:ResourceTag/RepositoryRead": "*_${aws:username}_*"
+                }
+            }
+        },
+        {
+            "Sid": "AllowTaggingOnOwnRepo",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:TagResource",
+                "codecommit:UntagResource"
+            ],
+            "Resource": "arn:aws:codecommit:*:*:*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:ResourceTag/RepositoryOwner": "${aws:username}"
+                },
+                "ForAnyValue:StringEquals": {
+                    "aws:TagKeys": [
+                        "RepositoryWrite",
+                        "RepositoryRead"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "DenyChangingRepositoryOwnerTag",
+            "Effect": "Deny",
+            "Action": [
+                "codecommit:TagResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "Null": {
+                    "aws:RequestTag/RepositoryOwner": "false"
+                },
+                "StringEquals": {
+                    "aws:RequestTag/RepositoryOwner": "${aws:username}"
+                }
+            }
+        },
+        {
+            "Sid": "DenyRemovingRepositoryOwnerTag",
+            "Effect": "Deny",
+            "Action": [
+                "codecommit:UntagResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ForAnyValue:StringEquals": {
+                    "aws:TagKeys": [
+                        "RepositoryOwner"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "AllowListRepositoriesGlobally",
+            "Effect": "Allow",
+            "Action": [
+                "codecommit:ListRepositories"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
