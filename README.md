@@ -1,4 +1,4 @@
-# policy.json — AWS CodeCommit IAM Policy
+# AWS CodeCommit IAM Policy
 
 ## Overview
 
@@ -18,7 +18,7 @@ Each IAM user is restricted to operating only on repositories where they are exp
 
 ### Delimiters allowed in `RepositoryWrite` / `RepositoryRead`
 
-The following characters can be used as delimiters surrounding the username in `StringLike` conditions such as `*_${aws:username}_*`:
+The following characters can be used as delimiters surrounding the username in `StringLike` conditions such as `*+${aws:username}+*`:
 
 | Delimiter | Character |
 |---|---|
@@ -72,15 +72,18 @@ Delimiters **do not need to be identical** before and after the username; you ma
   "codecommit:Describe*", "codecommit:GitPull", "codecommit:GitPush",
   "codecommit:CreateBranch", "codecommit:DeleteBranch",
   "codecommit:MergeBranches*", "codecommit:MergePullRequest*",
-  "codecommit:CreatePullRequest*", "codecommit:DeletePullRequestApprovalRule",
-  "codecommit:EvaluatePullRequestApprovalRules", ...
+  "codecommit:BatchDescribeMergeConflicts", "codecommit:CreateUnreferencedMergeCommit",
+  "codecommit:CreatePullRequest", "codecommit:PostCommentForPullRequest",
+  "codecommit:UpdatePullRequestDescription", "codecommit:UpdatePullRequestStatus",
+  "codecommit:UpdatePullRequestTitle",
+  "codecommit:DeleteFile", "codecommit:PutFile", "codecommit:CreateCommit"
 ]
 "Condition": {
-  "StringLike": { "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*" }
+  "StringLike": { "aws:ResourceTag/RepositoryWrite": "*+${aws:username}+*" }
 }
 ```
 
-**Purpose:** Allows read and write operations on repositories whose `RepositoryWrite` tag includes the user's username. A broad set of write privileges is granted, including branch operations, pull request operations, and file operations.
+**Purpose:** Allows read and write operations on repositories whose `RepositoryWrite` tag includes the user's username. Branch operations, file operations, and basic pull request operations (create, comment, update description/status/title) are granted. Pull request **approval** operations (approval rules, approval state, override) are **not** included; those are available only to the repository owner via Statement 2.
 
 > **Note:** The Deny rule in Statement 4 prohibits direct operations against protected branches.
 
@@ -92,20 +95,22 @@ Delimiters **do not need to be identical** before and after the username; you ma
 "Effect": "Deny"
 "Action": [
   "codecommit:GitPush", "codecommit:CreateBranch", "codecommit:DeleteBranch",
-  "codecommit:MergeBranches*", "codecommit:MergePullRequest*", ...
+  "codecommit:MergeBranches*", "codecommit:MergePullRequest*",
+  "codecommit:CreateUnreferencedMergeCommit",
+  "codecommit:DeleteFile", "codecommit:PutFile", "codecommit:CreateCommit"
 ]
 "Condition": {
   "StringLikeIfExists": {
     "codecommit:References": ["refs/heads/main", "refs/heads/develop"]
   },
-  "StringLike": { "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*" },
+  "StringLike": { "aws:ResourceTag/RepositoryWrite": "*+${aws:username}+*" },
   "Null": { "codecommit:References": "false" }
 }
 ```
 
 **Purpose:** Even for users with `RepositoryWrite` permission, this denies direct pushes and merges into the `main` and `develop` branches. As a result, any changes to protected branches must go through a pull request and review.
 
-> **Key point:** The `Null: { "codecommit:References": "false" }` condition restricts the scope of this Deny rule to operations that involve a Git reference (such as push, merge, or branch operations). Write operations that do not carry a `codecommit:References` context key are not over-denied by this statement; their permissions are governed by the other statements (Statements 2, 3, etc.) as usual.
+> **Key point:** The `Null: { "codecommit:References": "false" }` condition restricts the scope of this Deny rule to operations that carry the `codecommit:References` context key (Git push, branch, merge, and file/commit operations on a branch). Actions that do not support this key—such as pull request approval or metadata updates—are omitted from this statement because they would never match the condition and would have no effect.
 
 ---
 
@@ -117,7 +122,7 @@ Delimiters **do not need to be identical** before and after the username; you ma
   "codecommit:Describe*", "codecommit:BatchGet*", "codecommit:List*"
 ]
 "Condition": {
-  "StringLike": { "aws:ResourceTag/RepositoryRead": "*_${aws:username}_*" }
+  "StringLike": { "aws:ResourceTag/RepositoryRead": "*+${aws:username}+*" }
 }
 ```
 
@@ -186,7 +191,8 @@ Delimiters **do not need to be identical** before and after the username; you ma
 | List repositories | Yes | Yes | Yes |
 | Browse / clone code | Yes | Yes | Yes |
 | Push to feature branches | Yes | Yes | No |
-| Create / operate on pull requests | Yes | Yes | No |
+| Create / update pull requests | Yes | Yes | No |
+| Approve pull requests | Yes | No | No |
 | Direct push to `main` / `develop` | Yes | No | No |
 | Manage `RepositoryWrite` / `RepositoryRead` tags | Yes | No | No |
 | Delete repository / change settings | Yes | No | No |

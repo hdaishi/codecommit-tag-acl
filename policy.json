@@ -54,13 +54,7 @@
                 "codecommit:BatchDescribeMergeConflicts",
                 "codecommit:CreateUnreferencedMergeCommit",
                 "codecommit:CreatePullRequest",
-                "codecommit:CreatePullRequestApprovalRule",
-                "codecommit:DeletePullRequestApprovalRule",
-                "codecommit:EvaluatePullRequestApprovalRules",
-                "codecommit:OverridePullRequestApprovalRules",
                 "codecommit:PostCommentForPullRequest",
-                "codecommit:UpdatePullRequestApprovalRuleContent",
-                "codecommit:UpdatePullRequestApprovalState",
                 "codecommit:UpdatePullRequestDescription",
                 "codecommit:UpdatePullRequestStatus",
                 "codecommit:UpdatePullRequestTitle",
@@ -72,7 +66,7 @@
             "Resource": "arn:aws:codecommit:*:*:*",
             "Condition": {
                 "StringLike": {
-                    "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*"
+                    "aws:ResourceTag/RepositoryWrite": "*+${aws:username}+*"
                 }
             }
         },
@@ -89,17 +83,7 @@
                 "codecommit:MergePullRequestByFastForward",
                 "codecommit:MergePullRequestBySquash",
                 "codecommit:MergePullRequestByThreeWay",
-                "codecommit:BatchDescribeMergeConflicts",
                 "codecommit:CreateUnreferencedMergeCommit",
-                "codecommit:DeletePullRequestApprovalRule",
-                "codecommit:EvaluatePullRequestApprovalRules",
-                "codecommit:OverridePullRequestApprovalRules",
-                "codecommit:PostCommentForPullRequest",
-                "codecommit:UpdatePullRequestApprovalRuleContent",
-                "codecommit:UpdatePullRequestApprovalState",
-                "codecommit:UpdatePullRequestDescription",
-                "codecommit:UpdatePullRequestStatus",
-                "codecommit:UpdatePullRequestTitle",
                 "codecommit:DeleteFile",
                 "codecommit:PutFile",
                 "codecommit:CreateCommit"
@@ -113,7 +97,7 @@
                     ]
                 },
                 "StringLike": {
-                    "aws:ResourceTag/RepositoryWrite": "*_${aws:username}_*"
+                    "aws:ResourceTag/RepositoryWrite": "*+${aws:username}+*"
                 },
                 "Null": {
                     "codecommit:References": "false"
@@ -133,7 +117,7 @@
             "Resource": "arn:aws:codecommit:*:*:*",
             "Condition": {
                 "StringLike": {
-                    "aws:ResourceTag/RepositoryRead": "*_${aws:username}_*"
+                    "aws:ResourceTag/RepositoryRead": "*+${aws:username}+*"
                 }
             }
         },
@@ -168,7 +152,7 @@
                 "Null": {
                     "aws:RequestTag/RepositoryOwner": "false"
                 },
-                "StringEquals": {
+                "StringNotEquals": {
                     "aws:RequestTag/RepositoryOwner": "${aws:username}"
                 }
             }
